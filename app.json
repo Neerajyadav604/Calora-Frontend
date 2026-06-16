@@ -4,9 +4,12 @@
     "slug": "Calora",
     "version": "1.0.0",
     "orientation": "portrait",
+    "newArchEnabled": true,
+    "experiments": {
+      "tsconfigPaths": true
+    },
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -20,10 +23,20 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+        "package": "com.calora.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "17a990e1-001d-460f-8c05-b138c53248f1"
+      }
+    },
+    "owner": "neeraj752005",
+    "plugins": [
+      "expo-font",
+      "@react-native-google-signin/google-signin"
+    ]
   }
 }
