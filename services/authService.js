@@ -71,7 +71,7 @@ export const loginWithGoogle = async () => {
   if (!GoogleSignin) {
     return {
       success: false,
-      message: 'Google Sign-In requires a dev build. Email login works in Expo Go.',
+      message: JSON.stringify(error),
     };
   }
   try {
@@ -104,10 +104,14 @@ export const loginWithGoogle = async () => {
 
     return { success: true, user, isNewUser: !userDoc.exists() };
   } catch (error) {
-    console.log('Google Sign-In error:', error);
-    return { success: false, message: 'Google Sign-In failed. Please try again.' };
-  }
-};
+  console.log('FULL GOOGLE ERROR');
+  console.log(JSON.stringify(error, null, 2));
+
+  return {
+    success: false,
+    message: error.message || JSON.stringify(error)
+  };
+}
 
 // ─── Sync user with backend ───────────────────────────────────
 export const syncUserWithBackend = async (firebaseUser) => {

@@ -41,6 +41,101 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:379506085504:android:5be1c54c8f2477fda22065",
+        "android_client_info": {
+          "package_name": "com.calora.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "379506085504-049dradmc9rekga0s73f28oa716gjt60.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.calora.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "379506085504-01lmsr30ftsm280pimj4odbi8o4qa2bj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBb9vtpRljXnRzQ_2fPLGD3OdDY4qQtVMY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "379506085504-01lmsr30ftsm280pimj4odbi8o4qa2bj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:379506085504:android:218745f9504fb58ea22065",
+        "android_client_info": {
+          "package_name": "com.neeraj.calora"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "379506085504-01lmsr30ftsm280pimj4odbi8o4qa2bj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBb9vtpRljXnRzQ_2fPLGD3OdDY4qQtVMY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "379506085504-01lmsr30ftsm280pimj4odbi8o4qa2bj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:379506085504:android:f92e89d8d4e6f761a22065",
+        "android_client_info": {
+          "package_name": "com.neeraj752005.Calora"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "379506085504-01lmsr30ftsm280pimj4odbi8o4qa2bj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBb9vtpRljXnRzQ_2fPLGD3OdDY4qQtVMY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "379506085504-01lmsr30ftsm280pimj4odbi8o4qa2bj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
