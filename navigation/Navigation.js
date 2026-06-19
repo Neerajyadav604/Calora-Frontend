@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 import SplashScreen from '../screens/auth/SplashScreen';
 import WelcomeScreen from '../screens/auth/WelcomeScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
@@ -28,18 +29,23 @@ function AuthStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="Gender" component={GenderScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Age" component={AgeScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Height" component={HeightScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Weight" component={WeightScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Goal" component={GoalScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Activity" component={ActivityScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Calc" component={CalcScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Motivation" component={MotivationScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="AddRecipe" component={AddRecipeScreen} />
-      <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
+      <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function OnboardingStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Gender" component={GenderScreen} />
+      <Stack.Screen name="Age" component={AgeScreen} />
+      <Stack.Screen name="Height" component={HeightScreen} />
+      <Stack.Screen name="Weight" component={WeightScreen} />
+      <Stack.Screen name="Goal" component={GoalScreen} />
+      <Stack.Screen name="Activity" component={ActivityScreen} />
+      <Stack.Screen name="Calc" component={CalcScreen} />
+      <Stack.Screen name="Motivation" component={MotivationScreen} />
     </Stack.Navigator>
   );
 }
@@ -48,7 +54,7 @@ function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainApp" component={MainAppScreen} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="AddRecipe" component={AddRecipeScreen} />
       <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
     </Stack.Navigator>
@@ -56,19 +62,61 @@ function AppStack() {
 }
 
 export default function Navigation() {
-  const [user, setUser] = useState(auth.currentUser);
-  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState(undefined); // undefined = still loading
+  const [onboardingDone, setOnboardingDone] = useState(null); // null = not yet fetched
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-      setUser(nextUser);
-      setInitializing(false);
+    let unsubFirestore = null;
+
+    const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+
+        // Start listening to this user's Firestore doc for onboardingDone
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        unsubFirestore = onSnapshot(userRef, (snap) => {
+          if (snap.exists()) {
+            setOnboardingDone(snap.data()?.onboardingDone === true);
+          } else {
+            // Doc doesn't exist yet (edge case), treat as not done
+            setOnboardingDone(false);
+          }
+        });
+      } else {
+        // Logged out — clean up Firestore listener and reset state
+        setUser(null);
+        setOnboardingDone(null);
+        if (unsubFirestore) {
+          unsubFirestore();
+          unsubFirestore = null;
+        }
+      }
     });
 
-    return unsubscribe;
+    return () => {
+      unsubAuth();
+      if (unsubFirestore) unsubFirestore();
+    };
   }, []);
 
-  if (initializing) {
+  console.log('NAV STATE:', { 
+  user: user?.email, 
+  onboardingDone 
+});
+
+  // Case 1: Auth state not resolved yet → show splash
+  if (user === undefined) {
+    return (
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Splash" component={SplashScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
+
+  // Case 2: Logged in but Firestore hasn't responded yet → show splash
+  if (user && onboardingDone === null) {
     return (
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -79,8 +127,14 @@ export default function Navigation() {
   }
 
   return (
-    <NavigationContainer key={user ? 'authenticated' : 'unauthenticated'}>
-      {user ? <AppStack /> : <AuthStack />}
+    <NavigationContainer>
+      {!user ? (
+        <AuthStack />
+      ) : !onboardingDone ? (
+        <OnboardingStack />
+      ) : (
+        <AppStack />
+      )}
     </NavigationContainer>
   );
 }

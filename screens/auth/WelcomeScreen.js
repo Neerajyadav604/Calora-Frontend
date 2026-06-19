@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import {
   View,
   Text,
@@ -37,18 +38,18 @@ export default function WelcomeScreen({ navigation }) {
     ]).start();
   }, []);
 
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    const result = await loginWithGoogle();
-    setGoogleLoading(false);
+ const handleGoogleLogin = async () => {
+  setGoogleLoading(true);
+  const result = await loginWithGoogle();
+  setGoogleLoading(false);
 
-    if (result.success) {
-      await syncUserWithBackend(result.user);
-      navigation.replace('Gender');
-    } else {
-      Alert.alert('Google Sign-In Failed', result.message);
-    }
-  };
+  if (result.success) {
+    await syncUserWithBackend(result.user);
+    // DELETE: navigation.replace('Gender');  ← remove this line
+  } else {
+    Alert.alert('Google Sign-In Failed', result.message);
+  }
+};
 
   return (
     <View style={styles.container}>

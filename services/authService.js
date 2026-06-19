@@ -68,6 +68,19 @@ try {
   debugAuthError('Google Sign-In native module failed to load', error);
 }
 
+const resetGoogleSession = async () => {
+  if (!GoogleSignin) return;
+
+  try {
+    if (GoogleSignin.hasPreviousSignIn()) {
+      await GoogleSignin.revokeAccess();
+      await GoogleSignin.signOut();
+    }
+  } catch (error) {
+    debugAuthError('Failed to clear cached Google session', error);
+  }
+};
+
 // Register with Email & Password
 export const registerWithEmail = async (fullName, email, password) => {
   try {
@@ -128,6 +141,7 @@ export const loginWithGoogle = async () => {
   }
 
   try {
+    await resetGoogleSession();
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
     const signInResult = await GoogleSignin.signIn();
     const idToken = signInResult.data?.idToken || signInResult.idToken;
@@ -194,9 +208,19 @@ export const syncUserWithBackend = async (firebaseUser) => {
 export const logout = async () => {
   try {
     if (GoogleSignin) {
-      const isSignedIn = await GoogleSignin.isSignedIn();
-      if (isSignedIn) await GoogleSignin.signOut();
+      try {
+        await GoogleSignin.revokeAccess();
+      } catch (googleError) {
+        debugAuthError('Google revokeAccess failed during logout', googleError);
+      }
+
+      try {
+        await GoogleSignin.signOut();
+      } catch (googleError) {
+        debugAuthError('Google signOut failed during logout', googleError);
+      }
     }
+
     await signOut(auth);
     return { success: true };
   } catch (error) {

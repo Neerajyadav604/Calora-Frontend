@@ -38,7 +38,6 @@ export default function LoginScreen({ navigation }) {
   const result = await loginWithEmail(email.trim(), password);
 
   if (result.success) {
-    // Block login if email not verified
     if (!result.user.emailVerified) {
       await sendEmailVerification(result.user);
       navigation.replace('VerifyEmail', { email: email.trim() });
@@ -47,13 +46,9 @@ export default function LoginScreen({ navigation }) {
     }
 
     await syncUserWithBackend(result.user);
-    const onboardingDone = await checkOnboardingStatus(result.user.uid);
-
-    if (onboardingDone) {
-      return;
-    } else {
-      navigation.replace('Gender');
-    }
+    // DELETE everything below — Navigation.js handles it automatically
+    // const onboardingDone = await checkOnboardingStatus(result.user.uid);
+    // if (onboardingDone) { return; } else { navigation.replace('Gender'); }
   } else {
     Alert.alert('Login Failed', result.message);
   }

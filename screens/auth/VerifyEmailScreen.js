@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../../config/firebase';
-import { sendEmailVerification, reload } from 'firebase/auth';
+import { sendEmailVerification, reload ,signOut } from 'firebase/auth';
 
 export default function VerifyEmailScreen({ navigation, route }) {
   const { email } = route.params || {};
@@ -32,25 +32,25 @@ export default function VerifyEmailScreen({ navigation, route }) {
     return `${m}:${s}`;
   };
 
-  const handleVerify = async () => {
-    setChecking(true);
-    try {
-      await reload(auth.currentUser);
-      const user = auth.currentUser;
-      if (user?.emailVerified) {
-        navigation.replace('Gender');
-      } else {
-        Alert.alert(
-          'Not Verified Yet',
-          'Please open the link we sent to your email first, then tap the button below.',
-        );
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+  // handleVerify — remove the manual navigation, just let Navigation.js take over
+const handleVerify = async () => {
+  setChecking(true);
+  try {
+    await reload(auth.currentUser);
+    const user = auth.currentUser;
+    if (user?.emailVerified) {
+      // Do nothing — Navigation.js sees onboardingDone: false and renders OnboardingStack automatically
+    } else {
+      Alert.alert(
+        'Not Verified Yet',
+        'Please open the link we sent to your email first, then tap the button below.',
+      );
     }
-    setChecking(false);
-  };
-
+  } catch (error) {
+    Alert.alert('Error', 'Something went wrong. Please try again.');
+  }
+  setChecking(false);
+};
   const handleResend = async () => {
     if (resending) return;
     setResending(true);
@@ -66,9 +66,10 @@ export default function VerifyEmailScreen({ navigation, route }) {
   };
 
   const handleBack = async () => {
-    try { await auth.signOut(); } catch (e) {}
-    navigation.replace('Register');
-  };
+  try { await signOut(auth); } catch (e) {}
+  // No navigation.replace needed — signing out sets user to null,
+  // Navigation.js renders AuthStack automatically
+};
 
   return (
     <View style={styles.root}>

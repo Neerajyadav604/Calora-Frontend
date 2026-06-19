@@ -6,7 +6,7 @@ const { width, height } = Dimensions.get('window');
 
 const FITNESS_ICONS = ['🏃', '💪', '❤️', '🔥', '⚡', '🥗'];
 
-export default function SplashScreen({ navigation }) {
+export default function SplashScreen() {
   const logoScale = useRef(new Animated.Value(0)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -79,12 +79,8 @@ export default function SplashScreen({ navigation }) {
       }).start();
     }, 1200);
 
-    // Navigate to Welcome
-    const timer = setTimeout(() => {
-      navigation.replace('Welcome');
-    }, 3500);
-
-    return () => clearTimeout(timer);
+    
+   
   }, []);
 
   const spin = ringRotation.interpolate({
