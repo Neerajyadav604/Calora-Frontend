@@ -778,6 +778,18 @@ export default function NutritionScreen() {
     return unsub;
   }, [user?.uid]);
 
+  const macroValues = useMemo(() => ({
+    targetCalories: profile?.targetCalories || 0,
+    protein: profile?.macros?.protein || 0,
+    carbs: profile?.macros?.carbs || 0,
+    fats: profile?.macros?.fats || 0,
+  }), [
+    profile?.macros?.carbs,
+    profile?.macros?.fats,
+    profile?.macros?.protein,
+    profile?.targetCalories,
+  ]);
+
   if (profileLoading || nutritionLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -799,13 +811,6 @@ export default function NutritionScreen() {
     acc[type] = groupedMeals[type.toLowerCase()] || [];
     return acc;
   }, {});
-
-  const macroValues = useMemo(() => ({
-    targetCalories,
-    protein: macros.protein || 0,
-    carbs: macros.carbs || 0,
-    fats: macros.fats || 0,
-  }), [targetCalories, macros.carbs, macros.fats, macros.protein]);
 
   return (
     <SafeAreaView style={styles.safe}>
