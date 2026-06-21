@@ -1,9 +1,9 @@
 ﻿// screens/main/NutritionScreen.js
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   SafeAreaView, StatusBar, Dimensions, ActivityIndicator,
-  TextInput, Modal, Alert, KeyboardAvoidingView, Platform,
+  TextInput, Modal, Alert, KeyboardAvoidingView, Platform, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -12,6 +12,7 @@ import useDailyNutrition from '../../hooks/useDailyNutrition';
 import apiRequest from '../../services/api';
 import { SuccessOverlay } from '../../components/SuccessOverlay';
 import { useSuccessOverlay } from '../../hooks/useSuccessOverlay';
+import MacroEditorModal from '../../components/MacroEditorModal';
 
 const { width } = Dimensions.get('window');
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
@@ -84,6 +85,57 @@ function MealItem({ meal, onDelete }) {
         <Ionicons name="trash-outline" size={16} color="#FF5252" />
       </TouchableOpacity>
     </View>
+  );
+}
+
+function MacroToast({ visible, title, subtitle }) {
+  const translateY = useRef(new Animated.Value(80)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          damping: 14,
+          stiffness: 180,
+          mass: 0.8,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      return;
+    }
+
+    translateY.setValue(80);
+    opacity.setValue(0);
+  }, [opacity, translateY, visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.toast,
+        {
+          opacity,
+          transform: [{ translateY }],
+        },
+      ]}
+    >
+      <View style={styles.toastIcon}>
+        <Ionicons name="checkmark" size={18} color="#1A1D10" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.toastTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.toastSubtitle}>{subtitle}</Text> : null}
+      </View>
+    </Animated.View>
   );
 }
 function Field({ label, value, onChange, placeholder, required }) {
@@ -657,8 +709,11 @@ function LogMealModal({ visible, onClose, onLogged }) {
 export default function NutritionScreen() {
   const [profile, setProfile] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [macroEditorOpen, setMacroEditorOpen] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState(null);
+  const [toast, setToast] = useState({ visible: false, title: '', subtitle: '' });
+  const toastTimerRef = useRef(null);
 
   const user = auth.currentUser;
   const {
@@ -680,6 +735,24 @@ export default function NutritionScreen() {
   const handleDelete = useCallback(async (mealId) => {
     await removeFood(mealId);
   }, [removeFood]);
+
+  const showToast = useCallback((title, subtitle = '') => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+
+    setToast({ visible: true, title, subtitle });
+    toastTimerRef.current = setTimeout(() => {
+      setToast((current) => ({ ...current, visible: false }));
+      toastTimerRef.current = null;
+    }, 2600);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -727,6 +800,13 @@ export default function NutritionScreen() {
     return acc;
   }, {});
 
+  const macroValues = useMemo(() => ({
+    targetCalories,
+    protein: macros.protein || 0,
+    carbs: macros.carbs || 0,
+    fats: macros.fats || 0,
+  }), [targetCalories, macros.carbs, macros.fats, macros.protein]);
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FBE5" />
@@ -772,11 +852,21 @@ export default function NutritionScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionLabel}>MACRONUTRIENTS</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionLabel}>MACRONUTRIENTS</Text>
+            <TouchableOpacity
+              style={styles.macroEditBtn}
+              onPress={() => setMacroEditorOpen(true)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="create-outline" size={17} color="#1A1D10" />
+              <Text style={styles.macroEditText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
           <View style={{ marginTop: 16, gap: 14 }}>
-            <MacroBar label="Protein" current={protein} goal={macros.protein} color="#CCFF00" />
-            <MacroBar label="Carbohydrates" current={carbs} goal={macros.carbs} color="#7C5CBF" />
-            <MacroBar label="Fats" current={fats} goal={macros.fats} color="#4A90D9" />
+            <MacroBar label="Protein" current={protein} goal={macroValues.protein} color="#CCFF00" />
+            <MacroBar label="Carbohydrates" current={carbs} goal={macroValues.carbs} color="#7C5CBF" />
+            <MacroBar label="Fats" current={fats} goal={macroValues.fats} color="#4A90D9" />
           </View>
         </View>
 
@@ -815,6 +905,26 @@ export default function NutritionScreen() {
         onClose={handleModalClose}
         onLogged={handleAddFood}
       />
+
+      <MacroEditorModal
+        visible={macroEditorOpen}
+        initialValues={macroValues}
+        onClose={() => setMacroEditorOpen(false)}
+        onSaved={(payload) => {
+          setMacroEditorOpen(false);
+          showToast('Macro targets updated', `${payload.targetCalories} kcal and macro goals saved.`);
+        }}
+        onReset={() => {
+          setMacroEditorOpen(false);
+          showToast('Targets restored', 'Recommended macro targets were applied.');
+        }}
+      />
+
+      <MacroToast
+        visible={toast.visible}
+        title={toast.title}
+        subtitle={toast.subtitle}
+      />
     </SafeAreaView>
   );
 }
@@ -839,7 +949,18 @@ const styles = StyleSheet.create({
   ringStatVal:   { fontSize: 24, fontWeight: '900', color: '#1A1D10' },
   ringStatDivider: { width: 1, backgroundColor: '#E8EDD0', height: 40, alignSelf: 'center' },
 
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionLabel:  { fontSize: 12, fontWeight: '700', color: '#9AA08A', letterSpacing: 1.5 },
+  macroEditBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    backgroundColor: '#EEF0E8',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  macroEditText: { fontSize: 13, fontWeight: '700', color: '#1A1D10' },
   macroBarWrap:  { gap: 6 },
   macroLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   macroLabel:    { fontSize: 15, fontWeight: '600', color: '#1A1D10' },
@@ -940,6 +1061,35 @@ const styles = StyleSheet.create({
   previewDot:   { width: 8, height: 8, borderRadius: 4 },
   previewVal:   { fontSize: 16, fontWeight: '800', color: '#1A1D10' },
   previewLabel: { fontSize: 11, color: '#9AA08A' },
+
+  toast: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#CCFF00',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  toastIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F9FBE5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  toastTitle: { fontSize: 14, fontWeight: '800', color: '#1A1D10' },
+  toastSubtitle: { fontSize: 12, color: '#4A6020', marginTop: 2, lineHeight: 16 },
 
   logBtn:     { backgroundColor: '#CCFF00', borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 4 },
   logBtnText: { fontSize: 17, fontWeight: '800', color: '#1A1D10' },

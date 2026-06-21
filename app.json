@@ -38,6 +38,12 @@
     "plugins": [
       "expo-font",
       "@react-native-google-signin/google-signin"
-    ]
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/17a990e1-001d-460f-8c05-b138c53248f1"
+    }
   }
 }

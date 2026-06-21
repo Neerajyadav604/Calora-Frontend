@@ -10,6 +10,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { auth, db } from '../../config/firebase';
 import { uploadProfilePhoto } from '../../services/userService';
+import { calculateNutritionTargets } from '../../utils/nutritionCalculator';
 
 const GOAL_OPTIONS     = ['Lose Weight', 'Maintain Weight', 'Gain Weight', 'Build Muscle'];
 const ACTIVITY_OPTIONS = ['Sedentary', 'Lightly Active', 'Moderately Active', 'Very Active'];
@@ -323,6 +324,15 @@ export default function EditProfileScreen({ navigation }) {
     if (!name.trim()) { Alert.alert('Validation', 'Full name is required.'); return; }
     setSaving(true);
     try {
+      const nutritionTargets = calculateNutritionTargets({
+        age,
+        gender,
+        weight,
+        height,
+        goalType,
+        activityLevel: activity,
+      });
+
       await updateDoc(doc(db, 'users', user.uid), {
         name:          name.trim(),
         age:           parseInt(age)      || null,
@@ -331,6 +341,8 @@ export default function EditProfileScreen({ navigation }) {
         height:        parseFloat(height) || null,
         goalType,
         activityLevel: activity,
+        targetCalories: nutritionTargets.targetCalories,
+        macros: nutritionTargets.macros,
       });
       Alert.alert('Saved', 'Your profile has been updated.');
       navigation.goBack();
